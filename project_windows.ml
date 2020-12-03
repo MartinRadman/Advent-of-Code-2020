@@ -62,6 +62,7 @@ module Solver1 : Solver = struct
     
   let izlusci_vrednost = function
     | Some vrednost -> vrednost
+    | _ -> failwith "Vnesel si narobno obliko tipa."
 
   let naloga1 podatki =
     let vrstice = List.lines podatki in
@@ -104,8 +105,9 @@ end
 
 module Solver2 : Solver = struct
   let loci_pogoj_in_geslo niz =
-    let [pogoj; geslo] = (String.split_on_char ':' niz) in 
-    pogoj, String.trim geslo
+    match (String.split_on_char ':' niz) with
+    | [pogoj; geslo] -> pogoj, String.trim geslo
+    | _ -> failwith "Napačna oblika niza."
 
   let rec loci_pogoje_in_gesla_seznama pogoji gesla = function
     | [] -> pogoji, gesla
@@ -113,9 +115,14 @@ module Solver2 : Solver = struct
       loci_pogoje_in_gesla_seznama (pogoj :: pogoji) (geslo :: gesla) xs
 
   let razdeli_pogoj pogoj =
-    let [n1; ostalo] = String.split_on_char '-' pogoj in
-    let [n2; crka] = String.split_on_char ' ' ostalo in
-    n1, n2, crka
+    match String.split_on_char '-' pogoj with
+    | [] -> failwith "Napačna oblika niza."
+    | x1 :: [] -> failwith "Napačna oblika niza."
+    | x1 :: x2 :: x3 :: xs -> failwith "Napačna oblika niza."
+    | [n1; ostalo] ->
+      match String.split_on_char ' ' ostalo with
+      | [n2; crka] -> n1, n2, crka
+      | _ -> failwith "Napačna oblika niza."
   
   (* Pobrano iz https://rosettacode.org/wiki/Substring/Top_and_tail#OCaml *)
   let strip_first_char str =
@@ -135,6 +142,7 @@ module Solver2 : Solver = struct
   let rec prestej_pravilne pravilni = function
     | [], [] -> pravilni
     | pogoj :: p, geslo :: g -> if preveri_pravilnost pogoj geslo then prestej_pravilne (pravilni + 1) (p, g) else prestej_pravilne pravilni (p, g)
+    | _ -> failwith "Naroben vnos."
 
   let naloga1 podatki =
     let vrstice = List.lines podatki in
@@ -160,6 +168,7 @@ module Solver2 : Solver = struct
   let rec prestej_ta_prave_pravilne pravilni = function
     | [], [] -> pravilni
     | pogoj :: p, geslo :: g -> if preveri_ta_pravo_pravilnost pogoj geslo then prestej_ta_prave_pravilne (pravilni + 1) (p, g) else prestej_ta_prave_pravilne pravilni (p, g)
+    | _ -> failwith "Naroben vnos."
 
   let naloga2 podatki _part1 = 
     let vrstice = List.lines podatki in
@@ -168,11 +177,22 @@ module Solver2 : Solver = struct
     |> string_of_int
 end
 
+module Solver3 : Solver = struct
+let naloga1 podatki = 
+  ""
+
+let naloga2 podatki _part1 = 
+  ""
+
+end
+
+
 (* Poženemo zadevo *)
 let choose_solver : string -> (module Solver) = function
   | "0" -> (module Solver0)
   | "1" -> (module Solver1)
   | "2" -> (module Solver2)
+  | "3" -> (module Solver3)
   | _ -> failwith "Ni še rešeno"
 
 let main () =
