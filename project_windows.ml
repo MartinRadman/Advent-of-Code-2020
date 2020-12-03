@@ -102,10 +102,77 @@ module Solver1 : Solver = struct
     |> string_of_int 
 end
 
+module Solver2 : Solver = struct
+  let loci_pogoj_in_geslo niz =
+    let [pogoj; geslo] = (String.split_on_char ':' niz) in 
+    pogoj, String.trim geslo
+
+  let rec loci_pogoje_in_gesla_seznama pogoji gesla = function
+    | [] -> pogoji, gesla
+    | x :: xs -> let pogoj, geslo = loci_pogoj_in_geslo x in
+      loci_pogoje_in_gesla_seznama (pogoj :: pogoji) (geslo :: gesla) xs
+
+  let razdeli_pogoj pogoj =
+    let [n1; ostalo] = String.split_on_char '-' pogoj in
+    let [n2; crka] = String.split_on_char ' ' ostalo in
+    n1, n2, crka
+  
+  (* Pobrano iz https://rosettacode.org/wiki/Substring/Top_and_tail#OCaml *)
+  let strip_first_char str =
+  if str = "" then "" else
+  String.sub str 1 ((String.length str) - 1)
+
+  let rec preveri_pojavitev_crke crka pojavitev = function
+    | "" -> pojavitev
+    | niz -> if crka = niz.[0] then preveri_pojavitev_crke crka (pojavitev + 1) (strip_first_char niz) 
+      else preveri_pojavitev_crke crka (pojavitev) (strip_first_char niz)
+
+  let preveri_pravilnost pogoj geslo =
+    let n1, n2, crka = razdeli_pogoj pogoj in
+    let pojavitev = preveri_pojavitev_crke crka.[0] 0 geslo in
+    if pojavitev >= (int_of_string n1) && pojavitev <= (int_of_string n2) then true else false
+
+  let rec prestej_pravilne pravilni = function
+    | [], [] -> pravilni
+    | pogoj :: p, geslo :: g -> if preveri_pravilnost pogoj geslo then prestej_pravilne (pravilni + 1) (p, g) else prestej_pravilne pravilni (p, g)
+
+  let naloga1 podatki =
+    let vrstice = List.lines podatki in
+    vrstice |> loci_pogoje_in_gesla_seznama [] []
+    |> prestej_pravilne 0
+    |> string_of_int
+
+
+  let preveri_dolzino d niz = if String.length niz >= d then true else false
+
+  let preveri_ta_pravo_pravilnost pogoj geslo =
+    let n1, n2, crka = razdeli_pogoj pogoj in
+    let i1, i2 = (int_of_string n1), (int_of_string n2) in
+    if preveri_dolzino i1 geslo then
+      if preveri_dolzino i2 geslo then
+        (geslo.[i1 - 1] = crka.[0] && geslo.[i2 - 1] <> crka.[0]) || (geslo.[i1 - 1] <> crka.[0] && geslo.[i2 - 1] = crka.[0])
+      else
+        geslo.[i1 - 1] = crka.[0]
+    else
+      false
+
+
+  let rec prestej_ta_prave_pravilne pravilni = function
+    | [], [] -> pravilni
+    | pogoj :: p, geslo :: g -> if preveri_ta_pravo_pravilnost pogoj geslo then prestej_ta_prave_pravilne (pravilni + 1) (p, g) else prestej_ta_prave_pravilne pravilni (p, g)
+
+  let naloga2 podatki _part1 = 
+    let vrstice = List.lines podatki in
+    vrstice |> loci_pogoje_in_gesla_seznama [] []
+    |> prestej_ta_prave_pravilne 0
+    |> string_of_int
+end
+
 (* Poženemo zadevo *)
 let choose_solver : string -> (module Solver) = function
   | "0" -> (module Solver0)
   | "1" -> (module Solver1)
+  | "2" -> (module Solver2)
   | _ -> failwith "Ni še rešeno"
 
 let main () =
