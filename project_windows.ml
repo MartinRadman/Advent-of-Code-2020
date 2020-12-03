@@ -178,12 +178,30 @@ module Solver2 : Solver = struct
 end
 
 module Solver3 : Solver = struct
-let naloga1 podatki = 
-  ""
+  let preveri_zadetek mesto niz = if niz.[mesto] = '#' then true else false
 
-let naloga2 podatki _part1 = 
-  ""
+  let rec preveri_stezo zadetki mesto naklon = function
+    | [] -> zadetki
+    | vrstica :: rep -> if preveri_zadetek mesto vrstica then preveri_stezo (zadetki + 1) ((mesto + naklon) mod 31) naklon rep else preveri_stezo zadetki ((mesto + naklon) mod 31) naklon rep
+  
+  
+  let naloga1 podatki = 
+    let vrstice = List.lines podatki in
+    vrstice |> preveri_stezo 0 0 3
+    |> string_of_int
 
+  let rec izloci_sode lihi stikalo = function
+  | [] -> List.rev lihi
+  | x :: xs -> if stikalo then izloci_sode (x :: lihi) (not stikalo) xs else izloci_sode lihi (not stikalo) xs
+  
+  let naloga2 podatki _part1 = 
+    let vrstice = List.lines podatki in
+    let preverjanje = preveri_stezo 0 0 in
+    let f = fun x y -> x * y in
+    let lihi = (izloci_sode [] true vrstice) in
+    let stevilo = List.fold_left f 1 [preverjanje 1 vrstice; preverjanje 3 vrstice; preverjanje 5 vrstice; preverjanje 7 vrstice; preverjanje 1 lihi] in
+    string_of_int stevilo
+  
 end
 
 
