@@ -317,6 +317,49 @@ module Solver4 : Solver = struct
 
 end
 
+module Solver5 : Solver = struct
+  (* Dobljeno iz https://reasonml.chat/t/iterate-over-a-string-pattern-match-on-a-string/1317/2 *) 
+  let explode input =
+    let rec aux idx lst =
+      if idx<0 then lst else aux (idx-1) (input.[idx] :: lst)
+    in aux (String.length input - 1) []
+
+  let najdi_sedez niz =
+     let sez = explode niz in
+       let rec najdi_sedez_aux (v1, v2) (s1, s2) = function
+         | [] -> v1, s1
+         | 'F' :: xs -> najdi_sedez_aux (v1, ((v1 - 1) + v2) / 2) (s1, s2) xs
+         | 'B' :: xs -> najdi_sedez_aux (((v1 - 1) + v2) / 2 + 1, v2) (s1, s2) xs
+         | 'L' :: xs -> najdi_sedez_aux (v1, v2) (s1, ((s1 - 1) + s2) / 2) xs
+         | 'R' :: xs -> najdi_sedez_aux (v1, v2) (((s1 - 1) + s2) / 2 + 1, s2) xs
+         | _ -> failwith "Napačna oblika niza."
+        in
+      najdi_sedez_aux (1, 128) (1, 8) sez
+
+  let rec preveri_vse_sedeze vrednosti = function
+    | [] -> vrednosti
+    | x :: xs -> let v1, s1 = najdi_sedez x in preveri_vse_sedeze ((8 * (v1 - 1) + s1 - 1) :: vrednosti) xs
+
+  let naloga1 podatki =
+    let vrstice = List.lines podatki in
+    vrstice |> preveri_vse_sedeze []
+    |> List.fold_left max 0 
+    |> string_of_int
+
+
+  let rec najdi_moj_sedez = function
+    | x1 :: x2 :: xs -> if x1 = x2 - 2 then x1 + 1 else najdi_moj_sedez (x2 :: xs)
+    | _ -> failwith "Na napačnem letalu si."
+
+  let naloga2 podatki _part1 = 
+    let vrstice = List.lines podatki in
+    vrstice |> preveri_vse_sedeze []
+    |> List.sort compare
+    |> najdi_moj_sedez
+    |> string_of_int
+
+end
+
 
 (* Poženemo zadevo *)
 let choose_solver : string -> (module Solver) = function
@@ -325,6 +368,7 @@ let choose_solver : string -> (module Solver) = function
   | "2" -> (module Solver2)
   | "3" -> (module Solver3)
   | "4" -> (module Solver4)
+  | "5" -> (module Solver5)
   | _ -> failwith "Ni še rešeno"
 
 let main () =
