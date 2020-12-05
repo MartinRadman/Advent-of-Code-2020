@@ -1,3 +1,4 @@
+#load "str.cma"
 let preberi_datoteko ime_datoteke =
   let chan = open_in ime_datoteke in
   let vsebina = really_input_string chan (in_channel_length chan) in
@@ -204,6 +205,118 @@ module Solver3 : Solver = struct
   
 end
 
+module Solver4 : Solver = struct
+  let razdeli_blok blok =
+    let vrstice = String.split_on_char '\n' blok in
+    let raz_vrstice = List.map (String.split_on_char ' ') vrstice in
+    List.concat raz_vrstice
+
+  let rec prestej_in_zabelezi_podatke presteti zabelezeni vrednosti = function
+    | [] -> presteti, zabelezeni, vrednosti
+    | x :: xs -> match String.split_on_char ':' x with
+      | [tip; vrednost] -> prestej_in_zabelezi_podatke (presteti + 1) (tip :: zabelezeni) (vrednost :: vrednosti) xs
+      | _ -> failwith "Napačen tip niza."
+       
+
+  let obravnavaj_pravilnost st_polj zabelezena_polja =
+    st_polj = 8 || (st_polj = 7 && not (List.mem "cid" zabelezena_polja))
+
+  let rec preveri_pravilnost_podatkov pravilni = function
+    | [] -> pravilni
+    | x :: xs -> let razdeljen = razdeli_blok x in
+      let presteti, zabelezeni, _ = prestej_in_zabelezi_podatke 0 [] [] razdeljen in
+      if obravnavaj_pravilnost presteti zabelezeni then
+        preveri_pravilnost_podatkov (pravilni + 1) xs
+      else
+        preveri_pravilnost_podatkov pravilni xs
+
+  let naloga1 podatki = 
+    let bloki = Str.split (Str.regexp "\n\n+") podatki in
+    bloki |> preveri_pravilnost_podatkov 0
+    |> string_of_int
+
+
+  (* Dobljeno iz https://reasonml.chat/t/iterate-over-a-string-pattern-match-on-a-string/1317/2 *) 
+  let explode input =
+    let rec aux idx lst =
+      if idx<0 then lst else aux (idx-1) (input.[idx] :: lst)
+    in aux (String.length input - 1) []
+
+  (* Dobljeno iz https://stackoverflow.com/questions/49184057/does-ocaml-have-a-module-that-is-like-isdigit-and-isalpha-in-c-c *)
+  let is_alpha = function 'a' .. 'f' | 'A' .. 'F' -> true | _ -> false
+  let is_digit = function '0' .. '9' -> true | _ -> false
+
+  (* Pobrano iz https://rosettacode.org/wiki/Substring/Top_and_tail#OCaml *)
+  let strip_first_char str =
+  if str = "" then "" else
+  String.sub str 1 ((String.length str) - 1)
+
+  let preveri_visino visina =
+    if String.index_opt visina 'c' <> None then
+      match String.split_on_char 'c' visina with
+      | [stevilo_str; _] -> let stevilo = int_of_string stevilo_str in stevilo >= 150 && stevilo <= 193
+      | _ -> failwith "Napačen zapis višine."
+    else
+      if String.index_opt visina 'i' <> None then
+        match String.split_on_char 'i' visina with
+        | [stevilo_str; _] -> let stevilo = int_of_string stevilo_str in stevilo >= 59 && stevilo <= 76
+        | _ -> failwith "Napačen zapis višine."
+    else false
+
+  let preveri_lase barva =
+    let vrednost = strip_first_char barva in
+    let char_sez = explode vrednost in
+      let rec preveri_barvo_aux mesto = function
+        | [] -> mesto = 6
+        | x :: xs -> if is_digit x || is_alpha x then preveri_barvo_aux (mesto + 1) xs else false
+    in
+    preveri_barvo_aux 0 char_sez
+
+  let preveri_ali_stevilo stevilo_str =
+    let stevila = explode stevilo_str in
+      let rec preveri_aux mesto = function
+        | [] -> mesto = 9
+        | x :: xs -> if is_digit x then preveri_aux (mesto + 1) xs else false
+    in
+    preveri_aux 0 stevila
+
+  let preveri_tip tip vrednost =
+    match tip with
+    | "byr" -> let stevilo = int_of_string vrednost in
+      stevilo >= 1920 && stevilo <= 2002
+    | "iyr" -> let stevilo = int_of_string vrednost in
+      stevilo >= 2010 && stevilo <= 2020
+    | "eyr" -> let stevilo = int_of_string vrednost in
+      stevilo >= 2020 && stevilo <= 2030
+    | "hgt" -> preveri_visino vrednost
+    | "hcl" -> preveri_lase vrednost
+    | "ecl" -> List.mem vrednost ["amb"; "blu"; "brn"; "gry"; "grn"; "hzl"; "oth"]
+    | "pid" -> preveri_ali_stevilo vrednost
+    | "cid" -> true
+    | _ -> failwith "Napačen tip."
+
+  let rec obravnavaj_strozjo_pravilnost zabelezeni vrednosti =
+    match zabelezeni, vrednosti with
+    | [], [] -> true
+    | z :: zs, v :: vs -> if preveri_tip z v then obravnavaj_strozjo_pravilnost zs vs else false
+    | _ -> failwith "Napačna oblika podatkov."   
+
+  let rec preveri_strozjo_pravilnost pravilni = function
+    | [] -> pravilni
+    | x :: xs -> let razdeljen = razdeli_blok x in 
+      let presteti, zabelezeni, vrednosti = prestej_in_zabelezi_podatke 0 [] [] razdeljen in
+        if obravnavaj_pravilnost presteti zabelezeni && obravnavaj_strozjo_pravilnost zabelezeni vrednosti then
+          preveri_strozjo_pravilnost (pravilni + 1) xs
+        else
+          preveri_strozjo_pravilnost pravilni xs
+
+  let naloga2 podatki _part1 = 
+    let bloki = Str.split (Str.regexp "\n\n+") podatki in
+    bloki |> preveri_strozjo_pravilnost 0
+    |> string_of_int
+
+end
+
 
 (* Poženemo zadevo *)
 let choose_solver : string -> (module Solver) = function
@@ -211,6 +324,7 @@ let choose_solver : string -> (module Solver) = function
   | "1" -> (module Solver1)
   | "2" -> (module Solver2)
   | "3" -> (module Solver3)
+  | "4" -> (module Solver4)
   | _ -> failwith "Ni še rešeno"
 
 let main () =
