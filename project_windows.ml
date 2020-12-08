@@ -416,6 +416,69 @@ module Solver6 : Solver = struct
 
 end
 
+module Solver7 : Solver = struct
+  let naloga1 podatki =
+    ""
+
+
+  let naloga2 podatki _part1 = 
+    ""
+
+end
+
+module Solver8 : Solver = struct
+  let loci_podatke vrstica =
+    match Str.split (Str.regexp " [+-]") vrstica with
+    | [ukaz; vrednost] -> if String.contains vrstica '-' then
+        ukaz, (int_of_string vrednost) * (-1)
+      else
+        ukaz, int_of_string vrednost
+    | _ -> failwith "Napačna oblika vrstice"
+
+  let rec zgradi_zaporedje_ukazov zap = function
+    | [] -> List.rev zap
+    | x :: xs -> zgradi_zaporedje_ukazov (loci_podatke x :: zap) xs
+
+  let rec izvajaj_ukaze zgo_mest mesto acc ukazi =
+    if List.mem mesto zgo_mest then acc else
+    let ukaz, vrednost = List.nth ukazi mesto in
+    match ukaz with
+    | "acc" -> izvajaj_ukaze (mesto :: zgo_mest) (mesto + 1) (acc + vrednost) ukazi
+    | "nop" -> izvajaj_ukaze (mesto :: zgo_mest) (mesto + 1) acc ukazi
+    | "jmp" -> izvajaj_ukaze (mesto :: zgo_mest) (mesto + vrednost) acc ukazi
+    | _ -> failwith "Tak ukaz ne obstaja."
+
+  let naloga1 podatki =
+    let vrstice = List.lines podatki in
+    vrstice |> zgradi_zaporedje_ukazov []
+    |> izvajaj_ukaze [] 0 0
+    |> string_of_int
+
+
+  let rec izvajaj_ukaze originalno_stikalo stikalo zgo_mest mesto acc ukazi =
+    if mesto = List.length ukazi then acc else
+    if List.mem mesto zgo_mest then izvajaj_ukaze (originalno_stikalo + 1) (originalno_stikalo + 1) [] 0 0 ukazi else
+    let ukaz, vrednost = List.nth ukazi mesto in
+    match ukaz with
+    | "acc" -> izvajaj_ukaze originalno_stikalo stikalo (mesto :: zgo_mest) (mesto + 1) (acc + vrednost) ukazi
+    | "nop" -> if stikalo = 0 then
+        izvajaj_ukaze originalno_stikalo (stikalo - 1) (mesto :: zgo_mest) (mesto + vrednost) acc ukazi
+      else
+        izvajaj_ukaze originalno_stikalo (stikalo - 1) (mesto :: zgo_mest) (mesto + 1) acc ukazi
+    | "jmp" -> if stikalo = 0 then
+        izvajaj_ukaze originalno_stikalo (stikalo - 1) (mesto :: zgo_mest) (mesto + 1) acc ukazi
+      else
+        izvajaj_ukaze originalno_stikalo (stikalo - 1) (mesto :: zgo_mest) (mesto + vrednost) acc ukazi
+    | _ -> failwith "Tak ukaz ne obstaja."
+
+  let naloga2 podatki _part1 = 
+    let vrstice = List.lines podatki in
+    vrstice |> zgradi_zaporedje_ukazov []
+    |> izvajaj_ukaze 0 0 [] 0 0
+    |> string_of_int
+
+end
+
 (* Poženemo zadevo *)
 let choose_solver : string -> (module Solver) = function
   | "0" -> (module Solver0)
@@ -425,6 +488,8 @@ let choose_solver : string -> (module Solver) = function
   | "4" -> (module Solver4)
   | "5" -> (module Solver5)
   | "6" -> (module Solver6)
+  | "7" -> (module Solver7)
+  | "8" -> (module Solver8)
   | _ -> failwith "Ni še rešeno"
 
 let main () =
