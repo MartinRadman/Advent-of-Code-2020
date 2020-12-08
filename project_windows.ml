@@ -360,6 +360,61 @@ module Solver5 : Solver = struct
 
 end
 
+module Solver6 : Solver = struct
+  (* Dobljeno iz https://reasonml.chat/t/iterate-over-a-string-pattern-match-on-a-string/1317/2 *) 
+  let explode input =
+    let rec aux idx lst =
+      if idx<0 then lst else aux (idx-1) (input.[idx] :: lst)
+    in aux (String.length input - 1) []
+
+  let prestej_razlicne_pojavitve blok =
+    let znaki = explode blok in
+      let rec prestej_razlicne_pojavitve_aux zabelezeni presteti = function
+        | [] -> presteti
+        | '\n' :: xs -> prestej_razlicne_pojavitve_aux zabelezeni presteti xs
+        | x :: xs -> if List.mem x zabelezeni then 
+            prestej_razlicne_pojavitve_aux zabelezeni presteti xs
+          else 
+            prestej_razlicne_pojavitve_aux (x :: zabelezeni) (presteti + 1) xs
+      in
+    prestej_razlicne_pojavitve_aux [] 0 znaki
+
+  let rec preveri_vse_bloke vrednosti = function
+    | [] -> List.fold_left (+) 0 vrednosti
+    | x :: xs -> preveri_vse_bloke (prestej_razlicne_pojavitve x :: vrednosti) xs
+
+  let naloga1 podatki =
+   let bloki = Str.split (Str.regexp "\n\n") podatki in
+   bloki |> preveri_vse_bloke []
+   |> string_of_int
+
+
+  let presek sez1 sez2 =
+    let rec presek_aux sez skupni = function
+    	| [] -> skupni
+      | x :: xs -> if List.mem x sez then presek_aux sez (x :: skupni) xs else presek_aux sez skupni xs
+    in
+    presek_aux sez1 [] sez2
+
+  let prestej_skupne blok =
+    let vrstice = String.split_on_char '\n' blok in
+    let kandidati = explode (List.hd vrstice) in
+      let rec prestej_skupne_aux skupni = function
+        | [] -> List.length skupni
+        | x :: xs -> let crke = explode x in prestej_skupne_aux (presek skupni crke) xs
+      in
+    prestej_skupne_aux kandidati (List.tl vrstice)
+
+  let rec preveri_vse_bloke2 vsota = function
+    | [] -> vsota
+    | x :: xs -> preveri_vse_bloke2 (prestej_skupne x + vsota) xs
+
+  let naloga2 podatki _part1 = 
+    let bloki = Str.split (Str.regexp "\n\n") podatki in
+    bloki |> preveri_vse_bloke2 0
+    |> string_of_int
+
+end
 
 (* Poženemo zadevo *)
 let choose_solver : string -> (module Solver) = function
@@ -369,6 +424,7 @@ let choose_solver : string -> (module Solver) = function
   | "3" -> (module Solver3)
   | "4" -> (module Solver4)
   | "5" -> (module Solver5)
+  | "6" -> (module Solver6)
   | _ -> failwith "Ni še rešeno"
 
 let main () =
