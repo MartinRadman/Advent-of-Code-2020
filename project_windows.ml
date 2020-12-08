@@ -455,26 +455,26 @@ module Solver8 : Solver = struct
     |> string_of_int
 
 
-  let rec izvajaj_ukaze originalno_stikalo stikalo zgo_mest mesto acc ukazi =
+  let rec izvajaj_ukaze2 originalno_stikalo stikalo zgo_mest mesto acc ukazi =
     if mesto = List.length ukazi then acc else
-    if List.mem mesto zgo_mest then izvajaj_ukaze (originalno_stikalo + 1) (originalno_stikalo + 1) [] 0 0 ukazi else
+    if List.mem mesto zgo_mest then izvajaj_ukaze2 (originalno_stikalo + 1) (originalno_stikalo + 1) [] 0 0 ukazi else
     let ukaz, vrednost = List.nth ukazi mesto in
     match ukaz with
-    | "acc" -> izvajaj_ukaze originalno_stikalo stikalo (mesto :: zgo_mest) (mesto + 1) (acc + vrednost) ukazi
+    | "acc" -> izvajaj_ukaze2 originalno_stikalo stikalo (mesto :: zgo_mest) (mesto + 1) (acc + vrednost) ukazi
     | "nop" -> if stikalo = 0 then
-        izvajaj_ukaze originalno_stikalo (stikalo - 1) (mesto :: zgo_mest) (mesto + vrednost) acc ukazi
+        izvajaj_ukaze2 originalno_stikalo (stikalo - 1) (mesto :: zgo_mest) (mesto + vrednost) acc ukazi
       else
-        izvajaj_ukaze originalno_stikalo (stikalo - 1) (mesto :: zgo_mest) (mesto + 1) acc ukazi
+        izvajaj_ukaze2 originalno_stikalo (stikalo - 1) (mesto :: zgo_mest) (mesto + 1) acc ukazi
     | "jmp" -> if stikalo = 0 then
-        izvajaj_ukaze originalno_stikalo (stikalo - 1) (mesto :: zgo_mest) (mesto + 1) acc ukazi
+        izvajaj_ukaze2 originalno_stikalo (stikalo - 1) (mesto :: zgo_mest) (mesto + 1) acc ukazi
       else
-        izvajaj_ukaze originalno_stikalo (stikalo - 1) (mesto :: zgo_mest) (mesto + vrednost) acc ukazi
+        izvajaj_ukaze2 originalno_stikalo (stikalo - 1) (mesto :: zgo_mest) (mesto + vrednost) acc ukazi
     | _ -> failwith "Tak ukaz ne obstaja."
 
   let naloga2 podatki _part1 = 
     let vrstice = List.lines podatki in
     vrstice |> zgradi_zaporedje_ukazov []
-    |> izvajaj_ukaze 0 0 [] 0 0
+    |> izvajaj_ukaze2 0 0 [] 0 0
     |> string_of_int
 
 end
