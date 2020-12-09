@@ -479,6 +479,73 @@ module Solver8 : Solver = struct
 
 end
 
+module Solver9 : Solver = struct
+  let rec se_da_sesteti2 x xs kandidat =
+    match xs with
+    | [] -> false
+    | y :: ys -> if y + x = kandidat then true else se_da_sesteti2 x ys kandidat
+
+  let rec se_da_sesteti1 opazovani kandidat =
+    match opazovani with
+    | [] -> false
+    | x :: xs -> if se_da_sesteti2 x xs kandidat then true else se_da_sesteti1 xs kandidat
+
+  let rec preveri_stevilke opazovani = function
+    | [] -> failwith "Seznam nima ustreznega števila."
+    | x :: xs -> if List.length opazovani <> 25 then
+        preveri_stevilke (opazovani @ [x]) xs
+      else
+        if se_da_sesteti1 opazovani x then
+          preveri_stevilke (List.tl opazovani @ [x]) xs
+        else
+          x
+
+  let naloga1 podatki =
+    let vrstice = List.lines podatki in
+    vrstice |> List.map int_of_string
+    |> preveri_stevilke []
+    |> string_of_int
+
+
+  let sum sez = List.fold_left (+) 0 sez
+
+  let sestej_min_max sez =
+    let min = List.fold_left (fun x y -> if x < y then x else y) 177777905 sez in
+    let max = List.fold_left (fun x y -> if x > y then x else y) 0 sez in
+    min + max
+
+  let rec skrajsaj iskano = function
+    | [] -> []
+    | x :: xs -> if sum xs > iskano then skrajsaj iskano xs else xs
+
+  let rec preveri_vsote_zaporednih opazovani iskano = function
+    | [] -> failwith "Ne obstaja."
+    | x :: xs -> if List.length opazovani < 2 then
+        preveri_vsote_zaporednih (opazovani @ [x]) iskano xs
+      else
+        let vsota = sum opazovani in
+        if vsota > iskano then 
+          let nov_sez = skrajsaj iskano opazovani in
+          if sum nov_sez = iskano && List.length nov_sez >= 2 then
+            nov_sez
+          else
+            preveri_vsote_zaporednih (nov_sez @ [x]) iskano xs
+        else
+          if vsota = iskano then
+            opazovani
+          else
+            preveri_vsote_zaporednih (opazovani @ [x]) iskano xs
+
+
+  let naloga2 podatki _part1 = 
+    let vrstice = List.lines podatki in
+    vrstice |> List.map int_of_string
+    |> preveri_vsote_zaporednih [] 177777905
+    |> sestej_min_max
+    |> string_of_int
+
+end
+
 (* Poženemo zadevo *)
 let choose_solver : string -> (module Solver) = function
   | "0" -> (module Solver0)
@@ -490,6 +557,7 @@ let choose_solver : string -> (module Solver) = function
   | "6" -> (module Solver6)
   | "7" -> (module Solver7)
   | "8" -> (module Solver8)
+  | "9" -> (module Solver9)
   | _ -> failwith "Ni še rešeno"
 
 let main () =
