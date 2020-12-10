@@ -546,6 +546,74 @@ module Solver9 : Solver = struct
 
 end
 
+module Solver10 : Solver = struct
+  let rec preveri_razlike_v_verigi razlike = function
+    | [] | _ :: [] -> razlike
+    | x1 :: x2 :: xs -> let razlika = x2 - x1 in
+      if razlika > 3 then failwith "Nemogoče zgraditi verigo." else preveri_razlike_v_verigi (razlika :: razlike) (x2 :: xs)
+
+  let rec prestej_enke_in_trojke_in_zmnozi (e, t) = function
+    | [] -> e * t
+    | x :: xs ->
+      match x with
+      | 1 -> prestej_enke_in_trojke_in_zmnozi (e + 1, t) xs
+      | 3 -> prestej_enke_in_trojke_in_zmnozi (e, t + 1) xs
+      | _ -> prestej_enke_in_trojke_in_zmnozi (e, t) xs
+
+  let naloga1 podatki =
+    let vrstice = List.map int_of_string (List.lines podatki) in
+    vrstice |> List.cons 0 
+    |> List.cons (List.fold_left max 0 vrstice + 3)
+    |> List.sort compare
+    |> preveri_razlike_v_verigi []
+    |> prestej_enke_in_trojke_in_zmnozi (0, 0)
+    |> string_of_int
+
+
+  let sum sez = List.fold_left (+) 0 sez
+
+  let rec preveri_naslednje_moznosti x st = function
+    | [] -> st
+    | y :: ys -> if y - x <= 3 then preveri_naslednje_moznosti x (st + 1) ys else st
+
+  let rec sestavi_mozne_naslednje st novi = function
+    | [] -> novi
+    | x :: xs -> if st > 0 then sestavi_mozne_naslednje (st - 1) ((x :: xs) :: novi) xs else novi
+
+  (* Oblika kode pobrana iz https://www.cs.cornell.edu/courses/cs3110/2020fa/textbook/adv/memoization.html *)
+  let preveri_vse_moznosti sez =
+  let memo: int option array = Array.make (List.length sez + 1) None in
+  let rec f_mem sez =
+  let d = List.length sez in
+    match memo.(d) with
+    Some result -> result            (* computed already! *)
+      | None ->
+      let result = if d = 0 then 
+        0 
+      else
+        if d = 1 then
+          1
+        else
+          let x, xs = List.hd sez, List.tl sez in
+          let naslednji_korak_st = preveri_naslednje_moznosti x 0 xs in
+          let naslednji_koraki = sestavi_mozne_naslednje naslednji_korak_st [] xs in
+          sum (List.map f_mem naslednji_koraki)  
+      in
+        memo.(d) <- (Some result);   (* record in table *)
+        result
+  in
+    f_mem(sez)
+
+  let naloga2 podatki _part1 = 
+    let vrstice = List.map int_of_string (List.lines podatki) in
+    vrstice |> List.cons 0 
+    |> List.cons (List.fold_left max 0 vrstice + 3)
+    |> List.sort compare
+    |> preveri_vse_moznosti
+    |> string_of_int
+
+end
+
 (* Poženemo zadevo *)
 let choose_solver : string -> (module Solver) = function
   | "0" -> (module Solver0)
@@ -558,6 +626,7 @@ let choose_solver : string -> (module Solver) = function
   | "7" -> (module Solver7)
   | "8" -> (module Solver8)
   | "9" -> (module Solver9)
+  | "10" -> (module Solver10)
   | _ -> failwith "Ni še rešeno"
 
 let main () =
