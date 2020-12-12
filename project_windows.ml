@@ -614,6 +614,88 @@ module Solver10 : Solver = struct
 
 end
 
+module Solver11 : Solver = struct
+  (* Dobljeno iz https://reasonml.chat/t/iterate-over-a-string-pattern-match-on-a-string/1317/2 *) 
+  let explode input =
+    let rec aux idx lst =
+      if idx<0 then lst else aux (idx-1) (input.[idx] :: lst)
+    in aux (String.length input - 1) []
+
+  let pripravi_array sezsez =
+    sezsez |> List.map Array.of_list |> Array.of_list
+
+  let sosede_v_seznam array y x =
+    match y, x with
+    | 0, x ->
+      (match x with
+      | 0 -> [array.(1).(0); array.(0).(1); array.(1).(1)]
+      | 91 -> [array.(0).(90); array.(1).(0); array.(1).(91)]
+      | x -> [array.(0).(x - 1); array.(0).(x + 1); array.(1).(x - 1); array.(1).(x); array.(1).(x + 1)])
+    | y, 0 ->
+      (match y with
+      | 93 -> [array.(93).(1); array.(92).(0); array.(92).(1)]
+      | y -> [array.(y - 1).(0); array.(y - 1).(1); array.(y).(1); array.(y + 1).(0); array.(y + 1).(1)])
+    | 93, x ->
+      (match x with
+      | 91 -> [array.(92).(91); array.(92).(90); array.(93).(91)]
+      | x -> [array.(93).(x - 1); array.(93).(x + 1); array.(92).(x - 1); array.(92).(x); array.(92).(x + 1)])
+    | y, 91 -> [array.(y - 1).(91); array.(y + 1).(91); array.(y - 1).(90); array.(y).(90); array.(y + 1).(90)]
+    | y, x -> [array.(y - 1).(x); array.(y + 1).(x); array.(y - 1).(x - 1); array.(y).(x - 1); array.(y + 1).(x - 1); array.(y - 1).(x + 1); array.(y).(x + 1); array.(y + 1).(x + 1)]
+
+  let rec prestej_lojtre st = function
+    | [] -> st
+    | x :: xs -> if x = '#' then prestej_lojtre (st + 1) xs else prestej_lojtre st xs
+
+  let index_naslednjega y x =
+    if y <> 93 then 
+      y + 1, x
+    else
+      if x <> 91 then
+        0, x + 1
+      else
+        -1, -1
+
+  let rec izvedi_korak stari_array array y x =
+    if (y, x) = (-1, -1) then array else
+    let st_lojter = (sosede_v_seznam stari_array y x) |> prestej_lojtre 0 in
+    let yn, xn = index_naslednjega y x in
+    if stari_array.(y).(x) = '#' && st_lojter >= 4 then
+      (array.(y).(x) <- 'L';
+      izvedi_korak stari_array array yn xn)
+    else
+      if stari_array.(y).(x) = 'L' && st_lojter = 0 then
+        (array.(y).(x) <- '#';
+        izvedi_korak stari_array array yn xn)
+      else
+        izvedi_korak stari_array array yn xn
+
+  let rec izvajaj_korake_dokler_so_spremembe array =
+    let stari = array |> Array.copy |> Array.map Array.copy in
+    let nov_array = izvedi_korak stari array 0 0 in
+    if stari = nov_array then nov_array else izvajaj_korake_dokler_so_spremembe nov_array
+
+  let rec prestej_zasedene y x st array =
+    if (y, x) = (-1, -1) then st else
+    let yn, xn = index_naslednjega y x in
+    match array.(y).(x) with
+    | '#' -> prestej_zasedene yn xn (st + 1) array
+    | _ -> prestej_zasedene yn xn st array
+    
+
+  let naloga1 podatki =
+    let vrstice = List.lines podatki in
+    vrstice |> List.map explode
+    |> pripravi_array
+    |> izvajaj_korake_dokler_so_spremembe
+    |> prestej_zasedene 0 0 0
+    |> string_of_int
+
+
+  let naloga2 podatki _part1 = 
+    ""
+
+end
+
 (* Poženemo zadevo *)
 let choose_solver : string -> (module Solver) = function
   | "0" -> (module Solver0)
@@ -627,6 +709,7 @@ let choose_solver : string -> (module Solver) = function
   | "8" -> (module Solver8)
   | "9" -> (module Solver9)
   | "10" -> (module Solver10)
+  | "11" -> (module Solver11)
   | _ -> failwith "Ni še rešeno"
 
 let main () =
