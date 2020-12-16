@@ -696,6 +696,38 @@ module Solver11 : Solver = struct
 
 end
 
+module Solver15 : Solver = struct
+  let najdi_index x sez =
+    let rec najdi_index_aux x st = function 
+      | [] -> None
+      | y :: ys -> if y = x then Some st else najdi_index_aux x (st + 1) ys
+    in
+    najdi_index_aux x 0 sez
+
+  let novi = function
+    | [] -> failwith "Napačen vnos."
+    | x :: xs -> let st = najdi_index x xs in
+      match st with
+        | None -> 0
+        | Some stint -> 1 + stint
+
+  let rec izvajaj_do_2020 st sez =
+    if st = 2021 then List.hd sez else
+    let naslednji = novi sez in
+    izvajaj_do_2020 (st + 1) (naslednji :: sez)
+
+  let naloga1 podatki =
+    let sez = String.split_on_char ',' podatki in
+    sez |> List.rev
+    |> List.map int_of_string
+    |> izvajaj_do_2020 7
+    |> string_of_int
+
+  let naloga2 podatki _part1 = 
+    ""
+
+end
+
 (* Poženemo zadevo *)
 let choose_solver : string -> (module Solver) = function
   | "0" -> (module Solver0)
@@ -710,6 +742,7 @@ let choose_solver : string -> (module Solver) = function
   | "9" -> (module Solver9)
   | "10" -> (module Solver10)
   | "11" -> (module Solver11)
+  | "15" -> (module Solver15)
   | _ -> failwith "Ni še rešeno"
 
 let main () =
